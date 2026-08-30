@@ -1,0 +1,76 @@
+EXAM SEATING & TIMETABLE ALLOCATOR
+------------------------------------------------------------
+Loaded 24 students, 6 subjects, 3 rooms.
+
+TIMETABLE (Graph Coloring)
+------------------------------------------------------------
+Slots required by greedy Welsh-Powell coloring: 3 (0 ms)
+Backtracking check with 2 slots: NOT POSSIBLE (10 states explored, 0 ms)
+
+  Slot 1: SUB1 (Data Structures and Algorithms), SUB5 (Artificial Intelligence)
+  Slot 2: SUB2 (Database Management Systems), SUB6 (Engineering Mathematics)
+  Slot 3: SUB3 (Operating Systems), SUB4 (Computer Networks)
+
+SLOT 1 - ROOM & SEATING ALLOCATION
+------------------------------------------------------------
+Exam SUB1:
+  Room R3 (Hall C, 16/20 seats used)
+    Seating (batch-conflict-free): SUCCESS (34 states explored)
+    Seat map (batch labels):
+      CSE-A	CSE-C	CSE-A	CSE-C	
+      ----	----	----	----	
+      CSE-A	CSE-C	CSE-A	CSE-C	
+      ----	----	----	----	
+      CSE-A	CSE-C	CSE-A	CSE-C	
+
+Exam SUB5:
+  Room R1 (Hall A, 8/16 seats used)
+    Seating (batch-conflict-free): SUCCESS (16 states explored)
+    Seat map (batch labels):
+      CSE-B	----	CSE-B	----	
+      ----	----	----	----	
+      CSE-B	----	CSE-B	----	
+      ----	----	----	----	
+
+SLOT 2 - ROOM & SEATING ALLOCATION
+------------------------------------------------------------
+Exam SUB2:
+  Room R3 (Hall C, 16/20 seats used)
+    Seating (batch-conflict-free): SUCCESS (34 states explored)
+    Seat map (batch labels):
+      CSE-A	CSE-B	CSE-A	CSE-B	
+      ----	----	----	----	
+      CSE-A	CSE-B	CSE-A	CSE-B	
+      ----	----	----	----	
+      CSE-A	CSE-B	CSE-A	CSE-B	
+
+Exam SUB6:
+  Room R1 (Hall A, 8/16 seats used)
+    Seating (batch-conflict-free): SUCCESS (16 states explored)
+    Seat map (batch labels):
+      CSE-C	----	CSE-C	----	
+      ----	----	----	----	
+      CSE-C	----	CSE-C	----	
+      ----	----	----	----	
+
+SLOT 3 - ROOM & SEATING ALLOCATION
+------------------------------------------------------------
+Exam SUB3:
+  Room R1 (Hall A, 8/16 seats used)
+    Seating (batch-conflict-free): SUCCESS (16 states explored)
+    Seat map (batch labels):
+      CSE-A	----	CSE-A	----	
+      ----	----	----	----	
+      CSE-A	----	CSE-A	----	
+      ----	----	----	----	
+
+Exam SUB4:
+  Room R3 (Hall C, 16/20 seats used)
+    Seating (batch-conflict-free): SUCCESS (34 states explored)
+    Seat map (batch labels):
+      CSE-B	CSE-C	CSE-B	CSE-C	
+      ----	----	----	----	
+      CSE-B	CSE-C	CSE-B	CSE-C	
+      ----	----	----	----	
+      CSE-B	CSE-C	CSE-B	CSE-C	
+

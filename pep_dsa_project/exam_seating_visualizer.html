@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Exam Seating &amp; Timetable Allocator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-0:#081522;
+    --blue-1:#0d2036;
+    --blue-2:#123049;
+    --line:#3a6d94;
+    --line-dim:#22415c;
+    --paper:#dceeff;
+    --paper-dim:#8fb6d6;
+    --amber:#e8a33d;
+    --ok:#5fbf8f;
+    --bad:#d9705f;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--blue-0),var(--blue-0)),
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--line-dim) 27px, var(--line-dim) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, var(--line-dim) 27px, var(--line-dim) 28px);
+    color:var(--paper);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+  .sheet{
+    max-width:1180px;
+    margin:0 auto;
+    border:1px solid var(--line);
+    background:rgba(13,32,54,0.55);
+    backdrop-filter:blur(2px);
+  }
+
+  .titleblock{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    padding:22px 26px 18px;
+    border-bottom:2px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .titleblock h1{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:0.5px;
+    margin:0 0 6px;
+    color:#f2f8ff;
+  }
+  .titleblock .subtitle{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--amber);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+
+  .source-bar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 26px;
+    background:rgba(232,163,61,0.06);
+    border-bottom:1px solid var(--line-dim);
+    flex-wrap:wrap;
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .source-bar .label{color:var(--paper-dim);}
+  .source-bar .filename{color:var(--amber);font-weight:600;}
+  .btn{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.4px;
+    padding:7px 14px;
+    background:var(--amber);
+    color:var(--blue-0);
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.secondary{
+    background:transparent;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+  }
+  #fileInput{display:none;}
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    border-bottom:1px solid var(--line-dim);
+  }
+  .stat{padding:16px 20px;border-right:1px solid var(--line-dim);}
+  .stat:last-child{border-right:none;}
+  .stat .n{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--amber);}
+  .stat .l{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;color:var(--paper-dim);text-transform:uppercase;margin-top:2px;}
+
+  .insight{
+    margin:20px 26px;
+    border:1px dashed var(--line);
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.9;
+    color:var(--paper-dim);
+    position:relative;
+  }
+  .insight::before{
+    content:"ALGORITHM LOG";
+    position:absolute;top:-10px;left:14px;
+    background:var(--blue-0);padding:0 8px;
+    font-size:10px;letter-spacing:2px;color:var(--amber);
+  }
+  .insight .row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .insight .row span:first-child{color:var(--paper);}
+  .tag{display:inline-block;padding:1px 7px;border-radius:2px;font-size:10.5px;font-weight:600;letter-spacing:0.5px;}
+  .tag.ok{background:rgba(95,191,143,0.18);color:var(--ok);border:1px solid var(--ok);}
+  .tag.bad{background:rgba(217,112,95,0.18);color:var(--bad);border:1px solid var(--bad);}
+
+  .tabs{display:flex;gap:2px;padding:0 26px;margin-top:6px;flex-wrap:wrap;}
+  .tab{
+    font-family:var(--mono);font-size:12px;letter-spacing:0.5px;
+    padding:10px 18px;cursor:pointer;color:var(--paper-dim);
+    border:1px solid var(--line-dim);border-bottom:none;
+    background:rgba(255,255,255,0.02);
+    transition:background .15s, color .15s;
+  }
+  .tab:hover{color:var(--paper);}
+  .tab.active{color:var(--blue-0);background:var(--amber);border-color:var(--amber);font-weight:600;}
+
+  .panel{border-top:1px solid var(--line-dim);padding:24px 26px 30px;}
+
+  .room-card{border:1px solid var(--line);margin-bottom:22px;background:rgba(255,255,255,0.015);}
+  .room-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 16px;border-bottom:1px solid var(--line-dim);
+    flex-wrap:wrap;gap:8px;
+  }
+  .room-head .name{font-family:var(--mono);font-size:14px;font-weight:600;color:#f2f8ff;}
+  .room-head .exam{font-family:var(--mono);font-size:11px;color:var(--paper-dim);}
+  .badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .badge{font-family:var(--mono);font-size:10.5px;padding:3px 8px;border:1px solid var(--line);color:var(--paper-dim);letter-spacing:0.3px;}
+  .stamp{
+    font-family:var(--mono);font-weight:700;font-size:11px;letter-spacing:1.5px;
+    padding:4px 10px;border:2px solid var(--ok);color:var(--ok);
+    transform:rotate(-3deg);border-radius:3px;
+  }
+
+  .floor{padding:20px;display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+  .grid-wrap{overflow:auto;}
+  .grid{display:grid;gap:6px;}
+  .seat{
+    width:44px;height:44px;border-radius:3px;position:relative;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:9.5px;font-weight:600;color:#08131f;
+    border:1px solid rgba(0,0,0,0.25);
+  }
+  .seat::after{
+    content:"";position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+    width:16px;height:5px;border-radius:0 0 6px 6px;background:inherit;filter:brightness(0.8);
+  }
+  .seat.empty{background:transparent;border:1px dashed var(--line-dim);color:var(--line-dim);}
+  .seat.empty::after{display:none;}
+
+  .legend{
+    display:flex;flex-direction:column;gap:8px;font-family:var(--mono);font-size:11.5px;
+    min-width:150px;border-left:1px solid var(--line-dim);padding-left:20px;
+  }
+  .legend-title{color:var(--amber);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+  .legend-item{display:flex;align-items:center;gap:8px;color:var(--paper-dim);}
+  .swatch{width:14px;height:14px;border-radius:2px;flex:none;}
+
+  .empty-state{
+    padding:40px 26px;text-align:center;color:var(--paper-dim);
+    font-family:var(--mono);font-size:13px;line-height:1.8;
+  }
+
+  footer{text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--line);padding:22px 0 4px;letter-spacing:0.5px;}
+
+  @media (max-width:640px){
+    .titleblock{flex-direction:column;align-items:flex-start;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="titleblock">
+    <div>
+      <div class="subtitle">Graph Coloring &middot; Backtracking &middot; Priority Queues</div>
+      <h1>Exam Seating &amp; Timetable Allocator</h1>
+    </div>
+  </div>
+
+  <div class="source-bar">
+    <span class="label">Data source:</span>
+    <span class="filename" id="sourceLabel">bundled sample (report.json not loaded yet)</span>
+    <button class="btn" id="loadBtn">Load your report.json</button>
+    <button class="btn secondary" id="resetBtn">Use sample data</button>
+    <input type="file" id="fileInput" accept="application/json">
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div class="insight" id="insight"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel" id="panel"></div>
+
+</div>
+<footer>THIS PAGE ONLY DISPLAYS WHAT THE C++ PROGRAM COMPUTED &middot; LOAD YOUR OWN output/report.json TO SEE YOUR OWN DATA</footer>
+
+<script>
+/* =========================================================================
+   This file is a pure VIEWER. It performs no scheduling/allocation logic
+   itself - every number and seat map shown here comes directly from
+   output/report.json, which main.cpp writes after running the real
+   graph-coloring, backtracking, and priority-queue algorithms in C++.
+
+   That JSON has this shape:
+   {
+     "stats": {students, subjects, rooms, slots},
+     "timetable": {greedySlots, greedyMs, backtrackSlotsTried,
+                   backtrackPossible, backtrackStates, backtrackMs},
+     "slots": [ {slot, exams:[{code,name}, ...]}, ... ],
+     "allocations": [
+       {slot, examCode, examName, roomId, roomName, rows, cols,
+        success, states, seats: [ [ {batch,name} | null, ... ], ... ] },
+       ...
+     ]
+   }
+   ========================================================================= */
+
+const batchColors = {
+  "CSE-A":"#e8a33d", "CSE-B":"#5fbf8f", "CSE-C":"#7aa7d9",
+  "CSE-D":"#d9705f", "CSE-E":"#c98fd9", "CSE-F":"#e0d15a",
+};
+function colorFor(batch){ return batchColors[batch] || "#c9c9c9"; }
+
+// A small bundled sample so the page shows something meaningful even
+// before you load your own output/report.json.
+const SAMPLE_DATA = {"stats": {"students": 24, "subjects": 6, "rooms": 3, "slots": 3}, "timetable": {"greedySlots": 3, "greedyMs": 0.002628, "backtrackSlotsTried": 2, "backtrackPossible": false, "backtrackStates": 10, "backtrackMs": 0.001443}, "slots": [{"slot": 0, "exams": [{"code": "SUB1", "name": "Data Structures and Algorithms"}, {"code": "SUB5", "name": "Artificial Intelligence"}]}, {"slot": 1, "exams": [{"code": "SUB2", "name": "Database Management Systems"}, {"code": "SUB6", "name": "Engineering Mathematics"}]}, {"slot": 2, "exams": [{"code": "SUB3", "name": "Operating Systems"}, {"code": "SUB4", "name": "Computer Networks"}]}], "allocations": [{"slot": 0, "examCode": "SUB1", "examName": "Data Structures and Algorithms", "roomId": "R3", "roomName": "Hall C", "rows": 5, "cols": 4, "success": true, "states": 34, "seats": [[{"batch": "CSE-A", "name": "Aarav Sharma"}, {"batch": "CSE-C", "name": "Dhruv Menon"}, {"batch": "CSE-A", "name": "Diya Verma"}, {"batch": "CSE-C", "name": "Anika Desai"}], [null, null, null, null], [{"batch": "CSE-A", "name": "Kabir Singh"}, {"batch": "CSE-C", "name": "Ayaan Trivedi"}, {"batch": "CSE-A", "name": "Ishita Rao"}, {"batch": "CSE-C", "name": "Kiara Chandra"}], [null, null, null, null], [{"batch": "CSE-A", "name": "Vihaan Gupta"}, {"batch": "CSE-C", "name": "Rudra Bose"}, {"batch": "CSE-A", "name": "Ananya Joshi"}, {"batch": "CSE-C", "name": "Pari Sinha"}]]}, {"slot": 0, "examCode": "SUB5", "examName": "Artificial Intelligence", "roomId": "R1", "roomName": "Hall A", "rows": 4, "cols": 4, "success": true, "states": 16, "seats": [[{"batch": "CSE-B", "name": "Arjun Mehta"}, null, {"batch": "CSE-B", "name": "Myra Kapoor"}, null], [null, null, null, null], [{"batch": "CSE-B", "name": "Vivaan Chawla"}, null, {"batch": "CSE-B", "name": "Aadhya Bhatt"}, null], [null, null, null, null]]}, {"slot": 1, "examCode": "SUB2", "examName": "Database Management Systems", "roomId": "R3", "roomName": "Hall C", "rows": 5, "cols": 4, "success": true, "states": 34, "seats": [[{"batch": "CSE-A", "name": "Aarav Sharma"}, {"batch": "CSE-B", "name": "Arjun Mehta"}, {"batch": "CSE-A", "name": "Diya Verma"}, {"batch": "CSE-B", "name": "Myra Kapoor"}], [null, null, null, null], [{"batch": "CSE-A", "name": "Kabir Singh"}, {"batch": "CSE-B", "name": "Vivaan Chawla"}, {"batch": "CSE-A", "name": "Ishita Rao"}, {"batch": "CSE-B", "name": "Aadhya Bhatt"}], [null, null, null, null], [{"batch": "CSE-A", "name": "Vihaan Gupta"}, {"batch": "CSE-B", "name": "Kian Malhotra"}, {"batch": "CSE-A", "name": "Ananya Joshi"}, {"batch": "CSE-B", "name": "Navya Reddy"}]]}, {"slot": 1, "examCode": "SUB6", "examName": "Engineering Mathematics", "roomId": "R1", "roomName": "Hall A", "rows": 4, "cols": 4, "success": true, "states": 16, "seats": [[{"batch": "CSE-C", "name": "Dhruv Menon"}, null, {"batch": "CSE-C", "name": "Anika Desai"}, null], [null, null, null, null], [{"batch": "CSE-C", "name": "Ayaan Trivedi"}, null, {"batch": "CSE-C", "name": "Kiara Chandra"}, null], [null, null, null, null]]}, {"slot": 2, "examCode": "SUB3", "examName": "Operating Systems", "roomId": "R1", "roomName": "Hall A", "rows": 4, "cols": 4, "success": true, "states": 16, "seats": [[{"batch": "CSE-A", "name": "Aarav Sharma"}, null, {"batch": "CSE-A", "name": "Diya Verma"}, null], [null, null, null, null], [{"batch": "CSE-A", "name": "Kabir Singh"}, null, {"batch": "CSE-A", "name": "Ishita Rao"}, null], [null, null, null, null]]}, {"slot": 2, "examCode": "SUB4", "examName": "Computer Networks", "roomId": "R3", "roomName": "Hall C", "rows": 5, "cols": 4, "success": true, "states": 34, "seats": [[{"batch": "CSE-B", "name": "Arjun Mehta"}, {"batch": "CSE-C", "name": "Dhruv Menon"}, {"batch": "CSE-B", "name": "Myra Kapoor"}, {"batch": "CSE-C", "name": "Anika Desai"}], [null, null, null, null], [{"batch": "CSE-B", "name": "Vivaan Chawla"}, {"batch": "CSE-C", "name": "Ayaan Trivedi"}, {"batch": "CSE-B", "name": "Aadhya Bhatt"}, {"batch": "CSE-C", "name": "Kiara Chandra"}], [null, null, null, null], [{"batch": "CSE-B", "name": "Kian Malhotra"}, {"batch": "CSE-C", "name": "Rudra Bose"}, {"batch": "CSE-B", "name": "Navya Reddy"}, {"batch": "CSE-C", "name": "Pari Sinha"}]]}]};
+
+let currentData = SAMPLE_DATA;
+let activeSlot = 0;
+
+function render(data){
+  currentData = data;
+  activeSlot = data.slots.length ? data.slots[0].slot : 0;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="n">${data.stats.students}</div><div class="l">Students</div></div>
+    <div class="stat"><div class="n">${data.stats.subjects}</div><div class="l">Subjects</div></div>
+    <div class="stat"><div class="n">${data.stats.rooms}</div><div class="l">Rooms</div></div>
+    <div class="stat"><div class="n">${data.stats.slots}</div><div class="l">Exam Slots</div></div>
+  `;
+
+  const tt = data.timetable;
+  document.getElementById('insight').innerHTML = `
+    <div class="row"><span>Greedy Welsh-Powell coloring</span><span>${tt.greedySlots} slots used &middot; ${tt.greedyMs.toFixed(4)} ms</span></div>
+    <div class="row"><span>Backtracking check with ${tt.backtrackSlotsTried} slots</span>
+      <span><span class="tag ${tt.backtrackPossible ? 'ok':'bad'}">${tt.backtrackPossible ? 'POSSIBLE' : 'NOT POSSIBLE'}</span>
+      &nbsp;${tt.backtrackStates} states explored &middot; ${tt.backtrackMs.toFixed(4)} ms</span></div>
+  `;
+
+  renderTabs();
+  renderPanel();
+}
+
+function renderTabs(){
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = currentData.slots.map(s =>
+    `<div class="tab ${s.slot===activeSlot?'active':''}" data-slot="${s.slot}">SLOT ${s.slot+1}</div>`
+  ).join('');
+  tabsEl.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => { activeSlot = Number(t.dataset.slot); renderTabs(); renderPanel(); });
+  });
+}
+
+function seatGridHTML(alloc){
+  let seatsHTML = '';
+  for (const row of alloc.seats){
+    for (const cell of row){
+      if (!cell){
+        seatsHTML += `<div class="seat empty">&middot;</div>`;
+      } else {
+        const initials = cell.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        seatsHTML += `<div class="seat" style="background:${colorFor(cell.batch)}" title="${cell.name} (${cell.batch})">${initials}</div>`;
+      }
+    }
+  }
+
+  const batchesInRoom = [...new Set(alloc.seats.flat().filter(Boolean).map(c=>c.batch))];
+  const legendHTML = batchesInRoom.map(b =>
+    `<div class="legend-item"><span class="swatch" style="background:${colorFor(b)}"></span>${b}</div>`
+  ).join('');
+
+  const occupied = alloc.seats.flat().filter(Boolean).length;
+
+  return `
+    <div class="room-card">
+      <div class="room-head">
+        <div>
+          <div class="name">${alloc.roomName} <span style="color:var(--paper-dim);font-weight:400;">(${alloc.roomId})</span></div>
+          <div class="exam">${occupied}/${alloc.rows*alloc.cols} seats occupied</div>
+        </div>
+        <div class="badges">
+          <div class="badge">${alloc.states} states explored</div>
+          ${alloc.success
+            ? `<div class="stamp">CONFLICT&#8209;FREE &#10003;</div>`
+            : `<div class="badge" style="color:var(--bad);border-color:var(--bad);">UNRESOLVED</div>`}
+        </div>
+      </div>
+      <div class="floor">
+        <div class="grid-wrap">
+          <div class="grid" style="grid-template-columns:repeat(${alloc.cols}, 44px);">${seatsHTML}</div>
+        </div>
+        <div class="legend">
+          <div class="legend-title">Batches in room</div>
+          ${legendHTML}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPanel(){
+  const panelEl = document.getElementById('panel');
+  const slotInfo = currentData.slots.find(s => s.slot === activeSlot);
+  const allocsInSlot = currentData.allocations.filter(a => a.slot === activeSlot);
+
+  if (!slotInfo || allocsInSlot.length === 0){
+    panelEl.innerHTML = `<div class="empty-state">No allocation data for this slot.</div>`;
+    return;
+  }
+
+  let html = '';
+  for (const exam of slotInfo.exams){
+    html += `<div style="font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:0.5px;margin:18px 0 8px;">
+      ${exam.code} &middot; ${exam.name}
+    </div>`;
+    const rooms = allocsInSlot.filter(a => a.examCode === exam.code);
+    for (const alloc of rooms){
+      html += seatGridHTML(alloc);
+    }
+  }
+  panelEl.innerHTML = html;
+}
+
+/* ---------- File loading ---------- */
+document.getElementById('loadBtn').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('sourceLabel').textContent = 'bundled sample (report.json not loaded yet)';
+  render(SAMPLE_DATA);
+});
+document.getElementById('fileInput').addEventListener('change', (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      document.getElementById('sourceLabel').textContent = file.name + ' (loaded)';
+      render(data);
+    } catch (err) {
+      alert('Could not parse that file as JSON. Make sure you selected output/report.json.\n\n' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+render(SAMPLE_DATA);
+</script>
+</body>
+</html>
